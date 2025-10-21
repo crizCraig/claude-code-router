@@ -28,6 +28,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     ```bash
     npm run release
     ```
+-   **Link for local development**:
+    ```bash
+    npm link
+    ```
+    This replaces the global `ccr` command with the local development version. After making changes, rebuild with `npm run build` and restart with `ccr restart`.
+-   **Unlink local development version**:
+    ```bash
+    npm unlink -g @musistudio/claude-code-router
+    npm install -g @musistudio/claude-code-router
+    ```
 
 ## Architecture
 
