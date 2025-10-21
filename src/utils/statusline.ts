@@ -10,19 +10,8 @@ export interface StatusLineModuleConfig {
   text: string;
   color?: string;
   background?: string;
-  scriptPath?: string; // 用于script类型的模块，指定要执行的Node.js脚本文件路径 (For script type modules, specifies the Node.js script file path to execute)
+  scriptPath?: string; // 用于script类型的模块，指定要执行的Node.js脚本文件路径
 }
-
-// Cache for statusline results to prevent flashing
-interface StatusLineCache {
-  input: string;
-  result: string;
-  timestamp: number;
-  transcriptMtime: number; // Track transcript file modification time
-}
-
-let statusLineCache: StatusLineCache | null = null;
-const CACHE_TTL_MS = 100; // Cache for 100ms to prevent rapid re-rendering
 
 export interface StatusLineThemeConfig {
   modules: StatusLineModuleConfig[];
@@ -59,7 +48,7 @@ const COLORS: Record<string, string> = {
   reset: "\x1b[0m",
   bold: "\x1b[1m",
   dim: "\x1b[2m",
-  // 标准颜色 (Standard colors)
+  // 标准颜色
   black: "\x1b[30m",
   red: "\x1b[31m",
   green: "\x1b[32m",
@@ -68,7 +57,7 @@ const COLORS: Record<string, string> = {
   magenta: "\x1b[35m",
   cyan: "\x1b[36m",
   white: "\x1b[37m",
-  // 亮色 (Bright colors)
+  // 亮色
   bright_black: "\x1b[90m",
   bright_red: "\x1b[91m",
   bright_green: "\x1b[92m",
@@ -77,7 +66,7 @@ const COLORS: Record<string, string> = {
   bright_magenta: "\x1b[95m",
   bright_cyan: "\x1b[96m",
   bright_white: "\x1b[97m",
-  // 背景颜色 (Background colors)
+  // 背景颜色
   bg_black: "\x1b[40m",
   bg_red: "\x1b[41m",
   bg_green: "\x1b[42m",
@@ -437,32 +426,6 @@ function canDisplayUnicodeCharacter(char: string): boolean {
 
 export async function parseStatusLineData(input: StatusLineInput): Promise<string> {
   try {
-    // Create a cache key from the input to detect changes
-    const inputKey = JSON.stringify({
-      session: input.session_id,
-      transcript: input.transcript_path,
-      cwd: input.cwd,
-      model: input.model.id
-    });
-    
-    // Check transcript file modification time
-    let transcriptMtime = 0;
-    try {
-      const stats = await fs.stat(input.transcript_path);
-      transcriptMtime = stats.mtimeMs;
-    } catch (e) {
-      // If we can't stat the file, proceed without caching
-    }
-    
-    // Check if we have a valid cached result
-    const now = Date.now();
-    if (statusLineCache && 
-        statusLineCache.input === inputKey && 
-        statusLineCache.transcriptMtime === transcriptMtime &&
-        (now - statusLineCache.timestamp) < CACHE_TTL_MS) {
-      return statusLineCache.result;
-    }
-    
     // 检查是否应该使用简单主题
     const useSimpleTheme = shouldUseSimpleTheme();
     
@@ -493,26 +456,8 @@ export async function parseStatusLineData(input: StatusLineInput): Promise<strin
     }
     
     // 从transcript_path文件中读取最后一条assistant消息
-    // Optimization: read only the tail of the file (last ~200KB) to avoid loading huge files repeatedly
-    const TAIL_BYTES = 200 * 1024; // 200KB
-    let lines: string[] = [];
-    try {
-      const fh = await fs.open(input.transcript_path, 'r');
-      try {
-        const stat = await fh.stat();
-        const size = stat.size;
-        const start = Math.max(0, size - TAIL_BYTES);
-        const buf = Buffer.alloc(size - start);
-        await fh.read(buf, 0, buf.length, start);
-        lines = buf.toString('utf-8').trim().split('\n');
-      } finally {
-        await fh.close();
-      }
-    } catch {
-      // Fallback: read whole file if tail read fails
-      const transcriptContent = await fs.readFile(input.transcript_path, "utf-8");
-      lines = transcriptContent.trim().split("\n");
-    }
+    const transcriptContent = await fs.readFile(input.transcript_path, "utf-8");
+    const lines = transcriptContent.trim().split("\n");
     
     // 反向遍历寻找最后一条assistant消息
     let model = "";
@@ -592,24 +537,13 @@ export async function parseStatusLineData(input: StatusLineInput): Promise<strin
     const isPowerline = currentStyle === 'powerline';
     
     // 根据风格渲染状态行
-    let result: string;
     if (isPowerline) {
-      result = await renderPowerlineStyle(theme, variables);
+      return await renderPowerlineStyle(theme, variables);
     } else {
-      result = await renderDefaultStyle(theme, variables);
+      return await renderDefaultStyle(theme, variables);
     }
-    
-    // Cache the result
-    statusLineCache = {
-      input: inputKey,
-      result: result,
-      timestamp: now,
-      transcriptMtime: transcriptMtime
-    };
-    
-    return result;
   } catch (error) {
-    // 发生错误时返回空字符串（但don't cache errors)
+    // 发生错误时返回空字符串
     return "";
   }
 }
