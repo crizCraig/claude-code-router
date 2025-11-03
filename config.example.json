@@ -1,0 +1,71 @@
+{
+  "LOG": true,
+  "LOG_LEVEL": "trace",
+  "CLAUDE_PATH": "",
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "APIKEY": "",
+  "API_TIMEOUT_MS": "600000",
+  "PROXY_URL": "",
+  "transformers": [],
+  "Providers": [
+    {
+      "name": "polychat",
+      "api_base_url": "https://polychat.co/api/chat/completions",
+      "api_key": "your-polychat-api-key-here",
+      "models": [
+        "Sonnet-4-with-memory",
+        "GPT-5",
+        "memtree-sonnet-4.5-thinking-low",
+        "memtree-sonnet-4.5",
+        "memtree-gpt-5",
+        "memtree-perplexity-pro",
+        "Sonnet-4.5 Thinking Low"
+      ],
+      "transformer": {
+        "use": [
+          "polychat"
+        ]
+      }
+    }
+  ],
+  "StatusLine": {
+    "enabled": true,
+    "currentStyle": "default",
+    "default": {
+      "modules": [
+        {
+          "type": "model",
+          "icon": "🤖",
+          "text": "{{model}}",
+          "color": "bright_yellow"
+        },
+        {
+          "type": "usage",
+          "icon": "📊",
+          "text": "{{inputTokens}} → {{outputTokens}}",
+          "color": "bright_magenta"
+        },
+        {
+          "type": "workDir",
+          "icon": "󰉋",
+          "text": "{{workDirName}}",
+          "color": "bright_blue"
+        }
+      ]
+    },
+    "powerline": {
+      "modules": []
+    }
+  },
+  "Router": {
+    "default": "polychat,memtree-sonnet-4.5-thinking-low",
+    "background": "polychat,memtree-haiku-4.5",
+    "think": "polychat,memtree-sonnet-4.5-thinking-low",
+    "longContext": "polychat,memtree-sonnet-4.5-thinking-low",
+    "longContextThreshold": 200000,
+    "webSearch": "polychat,memtree-perplexity-pro",
+    "image": "polychat,memtree-sonnet-4.5-thinking-low"
+  },
+  "CUSTOM_ROUTER_PATH": ""
+}
